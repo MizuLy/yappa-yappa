@@ -30,13 +30,7 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { user, accessToken, refreshToken } = await loginUser(
-      {
-        email,
-        password,
-      },
-      res,
-    );
+    const { user, accessToken } = await loginUser({ email, password }, res);
 
     res.status(200).json({ status: "success", data: { user, accessToken } });
   } catch (err) {

@@ -4,7 +4,11 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const morgan = require("morgan");
 
+const healthRouter = require("./routes/health.route");
 const authRouter = require("./routes/auth.route");
+const postRouter = require("./routes/post.route");
+
+const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 
@@ -21,26 +25,10 @@ app.use(
 app.use(cookieParser());
 
 // Health
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use("/api/health", healthRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/posts", postRouter);
 
-app.get("/", (req, res) => {
-  return res.send("hello");
-});
-app.use("/api/auth", authRouter); // mizu@gmail.com @kdor1234
-
-// Error handler
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  res.status(err.statusCode ? statusCode : 500).json({
-    success: false,
-    message: err.message || "Internal server error",
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;
