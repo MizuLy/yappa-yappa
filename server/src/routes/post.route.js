@@ -12,6 +12,11 @@ const {
   getCommentsByPostHandler,
   createCommentHandler,
 } = require("../controllers/comment.controller");
+const {
+  likePostHandler,
+  getLikesByPostHandler,
+  unlikePostHandler,
+} = require("../controllers/like.controller");
 
 const router = express.Router();
 
@@ -30,5 +35,10 @@ router.post(
   createCommentHandler,
 );
 router.get("/:postId/comments", getCommentsByPostHandler);
+
+// Likes
+router.post("/:postId/like", verifyToken, likePostHandler);
+router.get("/:postId/likes", getLikesByPostHandler);
+router.delete("/:postId/like", verifyToken, unlikePostHandler);
 
 module.exports = router;
