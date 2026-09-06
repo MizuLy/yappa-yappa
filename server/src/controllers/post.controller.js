@@ -1,18 +1,18 @@
 const {
-  postYappa,
-  getYappas,
-  getYappaById,
-  updateYappa,
-  deleteYappa,
+  createPost,
+  getPosts,
+  getPostById,
+  updatePost,
+  deletePost,
 } = require("../services/post.service");
 
-const postYappaHandler = async (req, res, next) => {
+const createPostHandler = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { content } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
-    const post = await postYappa({
+    const post = await createPost({
       userId,
       content,
       imageUrls,
@@ -23,19 +23,19 @@ const postYappaHandler = async (req, res, next) => {
   }
 };
 
-const getYappasHandler = async (req, res, next) => {
+const getPostsHandler = async (req, res, next) => {
   try {
-    const posts = await getYappas();
+    const posts = await getPosts();
     res.status(200).json({ status: "success", data: posts });
   } catch (err) {
     next(err);
   }
 };
 
-const getYappaByIdHandler = async (req, res, next) => {
+const getPostByIdHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const post = await getYappaById({ id });
+    const post = await getPostById({ id });
 
     res.status(200).json({ status: "success", data: post });
   } catch (err) {
@@ -43,14 +43,14 @@ const getYappaByIdHandler = async (req, res, next) => {
   }
 };
 
-const updateYappaHandler = async (req, res, next) => {
+const updatePostHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
     const { content } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
-    const post = await updateYappa({
+    const post = await updatePost({
       id,
       userId,
       content,
@@ -63,12 +63,12 @@ const updateYappaHandler = async (req, res, next) => {
   }
 };
 
-const deleteYappaHandler = async (req, res, next) => {
+const deletePostHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    await deleteYappa({ id, userId });
+    await deletePost({ id, userId });
 
     res.status(200).json({ status: "success" });
   } catch (err) {
@@ -77,9 +77,9 @@ const deleteYappaHandler = async (req, res, next) => {
 };
 
 module.exports = {
-  postYappaHandler,
-  getYappaByIdHandler,
-  getYappasHandler,
-  updateYappaHandler,
-  deleteYappaHandler,
+  createPostHandler,
+  getPostByIdHandler,
+  getPostsHandler,
+  updatePostHandler,
+  deletePostHandler,
 };

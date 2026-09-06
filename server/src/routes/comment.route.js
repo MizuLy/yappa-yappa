@@ -10,7 +10,6 @@ const upload = require("../config/upload");
 
 const router = express.Router();
 
-router.post("/", verifyToken, upload.array("images", 3), createCommentHandler);
 router.get("/:id", getCommentByIdHandler);
 router.patch(
   "/:id",

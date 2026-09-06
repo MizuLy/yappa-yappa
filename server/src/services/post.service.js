@@ -1,6 +1,6 @@
 const { prisma } = require("../config/prisma");
 
-const postYappa = async ({ userId, content, imageUrls }) => {
+const createPost = async ({ userId, content, imageUrls }) => {
   if (!content && (!imageUrls || imageUrls.length === 0)) {
     const error = new Error("There must be something to yap about");
     error.statusCode = 400;
@@ -21,7 +21,7 @@ const postYappa = async ({ userId, content, imageUrls }) => {
   return post;
 };
 
-const getYappas = async () => {
+const getPosts = async () => {
   const posts = await prisma.post.findMany({
     include: { images: true },
   });
@@ -29,7 +29,7 @@ const getYappas = async () => {
   return posts;
 };
 
-const getYappaById = async ({ id }) => {
+const getPostById = async ({ id }) => {
   const post = await prisma.post.findUnique({
     where: { id },
     include: { images: true },
@@ -44,7 +44,7 @@ const getYappaById = async ({ id }) => {
   return post;
 };
 
-const updateYappa = async ({ id, userId, content, imageUrls }) => {
+const updatePost = async ({ id, userId, content, imageUrls }) => {
   const exist = await prisma.post.findUnique({
     where: { id },
     include: { images: true },
@@ -86,7 +86,7 @@ const updateYappa = async ({ id, userId, content, imageUrls }) => {
   return post;
 };
 
-const deleteYappa = async ({ id, userId }) => {
+const deletePost = async ({ id, userId }) => {
   const post = await prisma.post.findUnique({
     where: { id },
   });
@@ -111,9 +111,9 @@ const deleteYappa = async ({ id, userId }) => {
 };
 
 module.exports = {
-  postYappa,
-  getYappas,
-  getYappaById,
-  updateYappa,
-  deleteYappa,
+  createPost,
+  getPosts,
+  getPostById,
+  updatePost,
+  deletePost,
 };

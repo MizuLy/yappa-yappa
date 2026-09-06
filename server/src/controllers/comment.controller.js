@@ -9,7 +9,8 @@ const {
 const createCommentHandler = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { postId, content } = req.body;
+    const { postId } = req.params;
+    const { content } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
     const comment = await createComment({

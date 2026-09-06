@@ -1,20 +1,34 @@
 const express = require("express");
 const verifyToken = require("../middlewares/verifyToken");
 const {
-  postYappaHandler,
-  getYappasHandler,
-  getYappaByIdHandler,
-  updateYappaHandler,
-  deleteYappaHandler,
+  createPostHandler,
+  getPostsHandler,
+  getPostByIdHandler,
+  updatePostHandler,
+  deletePostHandler,
 } = require("../controllers/post.controller");
 const upload = require("../config/upload");
+const {
+  getCommentsByPostHandler,
+  createCommentHandler,
+} = require("../controllers/comment.controller");
 
 const router = express.Router();
 
-router.post("/", verifyToken, upload.array("images", 5), postYappaHandler);
-router.get("/", getYappasHandler);
-router.get("/:id", getYappaByIdHandler);
-router.put("/:id", verifyToken, upload.array("images", 5), updateYappaHandler);
-router.delete("/:id", verifyToken, deleteYappaHandler);
+// Posts
+router.post("/", verifyToken, upload.array("images", 5), createPostHandler);
+router.get("/", getPostsHandler);
+router.get("/:id", getPostByIdHandler);
+router.put("/:id", verifyToken, upload.array("images", 5), updatePostHandler);
+router.delete("/:id", verifyToken, deletePostHandler);
+
+// Comments
+router.post(
+  "/:postId/comments",
+  verifyToken,
+  upload.array("images", 3),
+  createCommentHandler,
+);
+router.get("/:postId/comments", getCommentsByPostHandler);
 
 module.exports = router;
