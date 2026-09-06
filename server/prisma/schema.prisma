@@ -84,17 +84,30 @@ model Comment {
   postId String
   userId String
   content String @db.VarChar(500)
-  imageUrl String? @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   likes Like[]
+  images CommentImage[]
 
   @@index([postId])
   @@index([userId])
   @@map("comments")
+}
+
+model CommentImage {
+  id String @id @default(uuid())
+  commentId String
+  url String @db.VarChar(500)
+  position Int?
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("comment_images")
 }
 
 model Like {
