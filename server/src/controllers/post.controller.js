@@ -9,12 +9,13 @@ const {
 const postYappaHandler = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { content, imageUrl } = req.body;
+    const { content } = req.body;
+    const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
     const post = await postYappa({
       userId,
       content,
-      imageUrl,
+      imageUrls,
     });
     res.status(201).json({ status: "success", data: post });
   } catch (err) {
@@ -46,13 +47,14 @@ const updateYappaHandler = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const { content, imageUrl } = req.body;
+    const { content } = req.body;
+    const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
     const post = await updateYappa({
       id,
       userId,
       content,
-      imageUrl,
+      imageUrls,
     });
 
     res.status(200).json({ status: "success", data: post });

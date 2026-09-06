@@ -19,9 +19,7 @@ app.use(
   }),
 );
 app.use(express.json());
-app.use(
-  morgan(process.env.NODE_ENV === "production" ? "combined" : "development"),
-);
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cookieParser());
 
 // Health

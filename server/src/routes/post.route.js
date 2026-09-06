@@ -5,15 +5,16 @@ const {
   getYappasHandler,
   getYappaByIdHandler,
   updateYappaHandler,
+  deleteYappaHandler,
 } = require("../controllers/post.controller");
-const { deleteYappa } = require("../services/post.service");
+const upload = require("../config/upload");
 
 const router = express.Router();
 
-router.post("/", verifyToken, postYappaHandler);
-router.get("/", verifyToken, getYappasHandler);
-router.get("/:id", verifyToken, getYappaByIdHandler);
-router.put("/:id", verifyToken, updateYappaHandler);
-router.delete("/:id", verifyToken, deleteYappa);
+router.post("/", verifyToken, upload.array("images", 5), postYappaHandler);
+router.get("/", getYappasHandler);
+router.get("/:id", getYappaByIdHandler);
+router.put("/:id", verifyToken, upload.array("images", 5), updateYappaHandler);
+router.delete("/:id", verifyToken, deleteYappaHandler);
 
 module.exports = router;

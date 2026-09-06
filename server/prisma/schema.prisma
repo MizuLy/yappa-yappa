@@ -53,7 +53,6 @@ model Post {
   id String @id @default(uuid())
   userId String
   content String?
-  imageUrl String? @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -61,9 +60,23 @@ model Post {
   comments Comment[]
   likes Like[]
   notifications Notification[]
+  images PostImage[]
 
   @@index([userId]) // For performance: faster query
   @@map("posts")    // For table name in database
+}
+
+model PostImage {
+  id String @id @default(uuid())
+  postId String
+  url String @db.VarChar(500)
+  position Int?
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_images")
 }
 
 model Comment {

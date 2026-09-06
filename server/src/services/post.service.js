@@ -1,21 +1,30 @@
 const { prisma } = require("../config/prisma");
 
-const postYappa = async ({ userId, content, imageUrl }) => {
-  if (!content && !imageUrl) {
+const postYappa = async ({ userId, content, imageUrls }) => {
+  if (!content && (!imageUrls || imageUrls.length === 0)) {
     const error = new Error("There must be something to yap about");
     error.statusCode = 400;
     throw error;
   }
 
   const post = await prisma.post.create({
-    data: { userId, content, imageUrl },
+    data: {
+      userId,
+      content,
+      images: imageUrls?.length
+        ? { create: imageUrls.map((url, index) => ({ url, position: index })) }
+        : undefined,
+    },
+    include: { images: true },
   });
 
   return post;
 };
 
 const getYappas = async () => {
-  const posts = await prisma.post.findMany();
+  const posts = await prisma.post.findMany({
+    include: { images: true },
+  });
 
   return posts;
 };
@@ -23,6 +32,7 @@ const getYappas = async () => {
 const getYappaById = async ({ id }) => {
   const post = await prisma.post.findUnique({
     where: { id },
+    include: { images: true },
   });
 
   if (!post) {
@@ -34,9 +44,10 @@ const getYappaById = async ({ id }) => {
   return post;
 };
 
-const updateYappa = async ({ id, userId, content, imageUrl }) => {
+const updateYappa = async ({ id, userId, content, imageUrls }) => {
   const exist = await prisma.post.findUnique({
     where: { id },
+    include: { images: true },
   });
 
   if (!exist) {
@@ -51,15 +62,25 @@ const updateYappa = async ({ id, userId, content, imageUrl }) => {
     throw error;
   }
 
-  if (!content && !imageUrl) {
+  if (!content && (!imageUrls || imageUrls.length === 0)) {
     const error = new Error("There must be something to yap about");
     error.statusCode = 400;
     throw error;
   }
 
+  if (imageUrls?.length) {
+    await prisma.postImage.deleteMany({ where: { postId: id } });
+  }
+
   const post = await prisma.post.update({
     where: { id },
-    data: { content, imageUrl },
+    data: {
+      content,
+      images: imageUrls?.length
+        ? { create: imageUrls.map((url, index) => ({ url, position: index })) }
+        : undefined,
+    },
+    include: { images: true },
   });
 
   return post;
