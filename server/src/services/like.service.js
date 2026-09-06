@@ -30,12 +30,15 @@ const likePost = async ({ userId, postId }) => {
 };
 
 const getLikesByPost = async ({ postId }) => {
-  const likes = await prisma.like.findMany({
-    where: { postId },
-    include: { user: { select: { id: true, name: true, imageUrl: true } } },
-  });
+  const [count, likes] = await Promise.all([
+    prisma.like.count({ where: { postId } }),
+    prisma.like.findMany({
+      where: { postId },
+      include: { user: { select: { id: true, name: true, imageUrl: true } } },
+    }),
+  ]);
 
-  return likes;
+  return { count, likes };
 };
 
 const unlikePost = async ({ userId, postId }) => {
@@ -85,13 +88,16 @@ const likeComment = async ({ userId, commentId }) => {
   return like;
 };
 
-const getLikesByComment = async ({ userId, commentId }) => {
-  const likes = await prisma.like.findMany({
-    where: { commentId },
-    include: { user: { select: { id: true, name: true, imageUrl: true } } },
-  });
+const getLikesByComment = async ({ commentId }) => {
+  const [count, likes] = await Promise.all([
+    prisma.like.count({ where: { commentId } }),
+    prisma.like.findMany({
+      where: { commentId },
+      include: { user: { select: { id: true, name: true, imageUrl: true } } },
+    }),
+  ]);
 
-  return likes;
+  return { count, likes };
 };
 
 const unlikeComment = async ({ userId, commentId }) => {

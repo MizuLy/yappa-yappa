@@ -25,9 +25,9 @@ const getLikesByPostHandler = async (req, res, next) => {
   try {
     const { postId } = req.params;
 
-    const likes = await getLikesByPost({ postId });
+    const result = await getLikesByPost({ postId });
 
-    res.status(200).json({ status: "success", data: likes });
+    res.status(200).json({ status: "success", data: result });
   } catch (err) {
     next(err);
   }
@@ -64,9 +64,9 @@ const getLikesByCommentHandler = async (req, res, next) => {
   try {
     const { commentId } = req.params;
 
-    const likes = await getLikesByComment({ commentId });
+    const result = await getLikesByComment({ commentId });
 
-    res.status(200).json({ status: "success", data: likes });
+    res.status(200).json({ status: "success", data: result });
   } catch (err) {
     next(err);
   }
