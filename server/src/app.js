@@ -8,6 +8,7 @@ const healthRouter = require("./routes/health.route");
 const authRouter = require("./routes/auth.route");
 const postRouter = require("./routes/post.route");
 const commentRouter = require("./routes/comment.route");
+const followRouter = require("./routes/follow.route");
 
 const errorHandler = require("./middlewares/errorHandler");
 
@@ -28,6 +29,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/comments", commentRouter);
+app.use("/api/follows", followRouter);
 
 app.use(errorHandler);
 
