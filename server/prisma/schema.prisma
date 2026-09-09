@@ -63,6 +63,7 @@ model Post {
   images PostImage[]
 
   @@index([userId]) // For performance: faster query
+  @@index([createdAt])
   @@map("posts")    // For table name in database
 }
 
@@ -94,6 +95,7 @@ model Comment {
 
   @@index([postId])
   @@index([userId])
+  @@index([postId, createdAt])
   @@map("comments")
 }
 
@@ -162,6 +164,7 @@ model Notification {
   @@index([userId])
   @@index([actorId])
   @@index([postId])
+  @@index([userId, isRead, createdAt]) // find by userId: 'abc', isRead: false, createdAt: 'asc/desc'. Faster querying?
   @@map("notifications")
 }
 
