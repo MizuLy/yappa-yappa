@@ -1,4 +1,6 @@
+const { NotificationType } = require("@prisma/client");
 const { prisma } = require("../config/prisma");
+const { createNotification } = require("./notification.service");
 
 // Posts
 const likePost = async ({ userId, postId }) => {
@@ -24,6 +26,13 @@ const likePost = async ({ userId, postId }) => {
 
   const like = await prisma.like.create({
     data: { userId, postId },
+  });
+
+  await createNotification({
+    userId: post.userId,
+    actorId: userId,
+    type: NotificationType.LIKE,
+    postId,
   });
 
   return like;
@@ -63,6 +72,7 @@ const unlikePost = async ({ userId, postId }) => {
 const likeComment = async ({ userId, commentId }) => {
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
+    select: { id: true, postId: true, userId: true },
   });
 
   if (!comment) {
@@ -83,6 +93,13 @@ const likeComment = async ({ userId, commentId }) => {
 
   const like = await prisma.like.create({
     data: { userId, commentId },
+  });
+
+  await createNotification({
+    userId: comment.userId,
+    actorId: userId,
+    type: "LIKE",
+    postId: comment.postId,
   });
 
   return like;

@@ -1,4 +1,6 @@
+const { NotificationType } = require("@prisma/client");
 const { prisma } = require("../config/prisma");
+const { createNotification } = require("./notification.service");
 
 const followUser = async ({ followerId, followingId }) => {
   if (followerId === followingId) {
@@ -29,6 +31,12 @@ const followUser = async ({ followerId, followingId }) => {
 
   const follow = await prisma.follow.create({
     data: { followerId, followingId },
+  });
+
+  await createNotification({
+    userId: followingId,
+    actorId: followerId,
+    type: NotificationType.FOLLOW,
   });
 
   return follow;

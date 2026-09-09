@@ -1,4 +1,6 @@
+const { NotificationType } = require("@prisma/client");
 const { prisma } = require("../config/prisma");
+const { createNotification } = require("./notification.service");
 
 const createComment = async ({ userId, postId, content, imageUrls }) => {
   const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -25,6 +27,13 @@ const createComment = async ({ userId, postId, content, imageUrls }) => {
         : undefined,
     },
     include: { images: true },
+  });
+
+  await createNotification({
+    userId: post.userId,
+    actorId: userId,
+    type: NotificationType.COMMENT,
+    postId,
   });
 
   return comment;
