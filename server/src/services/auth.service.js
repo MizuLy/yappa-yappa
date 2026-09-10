@@ -5,6 +5,7 @@ const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../utils/generateToken");
+const sendOtp = require("../utils/sendMail");
 
 const refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) {
@@ -70,6 +71,14 @@ const registerUser = async ({ name, email, password }) => {
     },
   });
 
+  const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  await prisma.otp.create({
+    data: { userId: user.id, otp: otpCode, expiresAt },
+  });
+  await sendOtp(user.email, otpCode);
+
   return user;
 };
 
@@ -81,6 +90,12 @@ const loginUser = async ({ email, password }, res) => {
   if (!user) {
     const error = new Error("Invalid credentials");
     error.statusCode = 401;
+    throw error;
+  }
+
+  if (!user.isVerified) {
+    const error = new Error("Please verify your account before logging in...");
+    error.statusCode = 400;
     throw error;
   }
 

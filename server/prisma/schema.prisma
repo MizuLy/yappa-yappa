@@ -45,6 +45,7 @@ model User {
   actedNotifications Notification[] @relation("Triggerer")
   refreshTokens RefreshToken[]
   resetTokens ResetToken[]
+  otps Otp[]
 
   @@map("users")
 }
@@ -166,6 +167,19 @@ model Notification {
   @@index([postId])
   @@index([userId, isRead, createdAt]) // find by userId: 'abc', isRead: false, createdAt: 'asc/desc'. Faster querying?
   @@map("notifications")
+}
+
+model Otp {
+  id String @id @default(uuid())
+  userId String
+  otp String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("otps")
 }
 
 model ResetToken {

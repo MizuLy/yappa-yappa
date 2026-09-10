@@ -21,7 +21,14 @@ const register = async (req, res, next) => {
     const { name, email, password } = req.body;
     const user = await registerUser({ name, email, password });
 
-    res.status(201).json({ status: "success", data: user });
+    res
+      .status(201)
+      .json({
+        status: "success",
+        message:
+          "Registered successful! Please verify your email before logging in...",
+        data: user,
+      });
   } catch (err) {
     next(err);
   }
