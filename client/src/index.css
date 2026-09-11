@@ -1,9 +1,46 @@
-@import url("https://fonts.googleapis.com/css2?family=Belanosima:wght@400;600;700&family=Comfortaa:wght@300..700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Noto+Sans+Khmer:wght@100..900&family=Tenor+Sans&family=Jersey+10&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Belanosima:wght@400;600;700&family=Bungee+Spice&family=Comfortaa:wght@300..700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Noto+Sans+Khmer:wght@100..900&family=Tenor+Sans&family=Jersey+10&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
   @apply font-instrumentsans;
+}
+
+:root {
+  /* LIGHT MODE - Soft Lilac & Rose Glass */
+  --bg-main: #FAF8FC;          /* Warm Creamy Lavender Tint */
+  --bg-surface: #FFFFFF;       /* Pure White Card */
+  --bg-glass: rgba(255, 255, 255, 0.75);
+  --border-glass: rgba(225, 215, 245, 0.5); /* Delicate Pinkish-Purple Border */
+
+  --text-primary: #181124;     /* Deep Blackberry / Midnight Purple */
+  --text-secondary: #6B5E7D;   /* Muted Violet Gray */
+  --text-muted: #A89CB8;      /* Soft Mauve Gray */
+
+  --accent-primary: #6366F1;    /* Vibrant Indigo */
+  --accent-hover: #4F46E5;      /* Deep Indigo */
+  --accent-subtle: #F4F3FF;     /* Softest Lavender Tint */
+  --accent-glow: rgba(236, 72, 153, 0.15); /* Soft Rose Glow */
+}
+
+.dark {
+  /* DARK MODE - Obsidian Violet Glow */
+  --bg-main: #09070F;          /* Deep Obsidian Purple/Black */
+  --bg-surface: rgba(255, 255, 255, 0.035);
+  --bg-glass: rgba(22, 16, 32, 0.65); /* Dark Glassy Plum Tint */
+  --border-glass: rgba(244, 114, 182, 0.15); /* Subtle Neon Rose Border */
+
+  --text-primary: #FAF5FF;     /* Cool Lavender White */
+  --text-secondary: #B8ACCE;   /* Muted Violet */
+  --text-muted: #64567A;      /* Dark Mauve */
+
+  --accent-primary: #818CF8;    /* Bright Electric Iris/Indigo */
+  --accent-hover: #A5B4FC;      /* Pastel Soft Purple */
+  --accent-subtle: rgba(168, 85, 247, 0.12); /* Translucent Orchid */
+  --accent-glow: rgba(236, 72, 153, 0.25); /* Rose Pink Glow */
 }
