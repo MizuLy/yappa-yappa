@@ -14,6 +14,6 @@ const router = express.Router();
 router.post("/refresh", refresh);
 router.post("/register", validateRequest(registerSchema), register);
 router.post("/login", validateRequest(loginSchema), login);
-router.post("/logout", verifyToken, logout);
+router.post("/logout", logout);
 
 module.exports = router;
