@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
@@ -12,6 +13,6 @@ export default function GuestRoute({ children }) {
     );
   }
 
-  if (!accessToken) return <Navigate to={"/login"} />;
+  if (accessToken) return <Navigate to={"/"} />; // if still logged in, bounce back to feed
   return children;
 }
