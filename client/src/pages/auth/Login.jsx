@@ -1,98 +1,155 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { requestOtp } from "../../api/auth";
 import { useAuth } from "../../hooks/useAuth";
+import AuthShell from "../../components/auth/AuthShell";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [canVerifyAccount, setCanVerifyAccount] = useState(false);
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleVerifyAccount = async () => {
+    setError("");
+    setIsRequestingVerification(true);
+    try {
+      await requestOtp(formData.email);
+      navigate("/register", { state: { verifyEmail: formData.email } });
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not send a verification code.");
+    } finally {
+      setIsRequestingVerification(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
+    setCanVerifyAccount(false);
+    setIsSubmitting(true);
     try {
       await login(formData);
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      const message =
+        err.response?.data?.message || "Unable to sign in. Please try again.";
+      setCanVerifyAccount(message.toLowerCase().includes("verify your account"));
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-black flex items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Glass Card Container */}
-      <div className="w-full max-w-md p-8 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] relative z-10 transition-all duration-300 hover:border-white/20">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-white tracking-wide">
-            Welcome Back
-          </h2>
-          <p className="text-xs text-neutral-400 mt-2">
-            Sign in to continue to your account
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="email"
-              className="text-xs font-medium text-neutral-300 uppercase tracking-wider"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="john@example.com"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all duration-200"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="password"
-              className="text-xs font-medium text-neutral-300 uppercase tracking-wider"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all duration-200"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="mt-4 w-full py-3 px-4 rounded-xl font-medium text-sm text-white bg-indigo-600/30 hover:bg-indigo-600/40 border border-indigo-500/30 backdrop-blur-md transition-all duration-200 active:scale-[0.98] shadow-lg shadow-indigo-500/10"
-          >
-            Sign In
-          </button>
-        </form>
+    <AuthShell
+      title="Welcome back"
+      description="Real conversations, brighter tomorrows. Pick up where you left off on Yappa Yappa."
+    >
+      <div className="mb-8">
+        <p className="mb-3 text-sm font-semibold text-indigo-600">
+          Good to see you
+        </p>
+        <h2 className="text-3xl font-bold tracking-tight text-[#11133b]">
+          Sign in to your account
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Join the conversation in a few seconds.
+        </p>
       </div>
-    </div>
+      {location.state?.message && (
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          {location.state.message}
+        </div>
+      )}
+      {error && (
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+          {error}
+          {canVerifyAccount && (
+            <button
+              type="button"
+              onClick={handleVerifyAccount}
+              disabled={isRequestingVerification}
+              className="ml-1 font-bold underline underline-offset-2 hover:text-red-800"
+            >
+              {isRequestingVerification ? "Sending code..." : "Verify your account"}
+            </button>
+          )}
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold text-slate-700">
+            Email
+          </span>
+          <span className="relative block">
+            <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(event) =>
+                setFormData({ ...formData, email: event.target.value })
+              }
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-200 bg-white px-11 py-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+            />
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold text-slate-700">
+            Password
+          </span>
+          <span className="relative block">
+            <LockKeyhole className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              value={formData.password}
+              onChange={(event) =>
+                setFormData({ ...formData, password: event.target.value })
+              }
+              placeholder="Enter your password"
+              className="w-full rounded-xl border border-slate-200 bg-white px-11 py-3.5 pr-12 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+              aria-label="Toggle password visibility"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </span>
+        </label>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {isSubmitting ? "Signing in..." : "Sign In"}
+          {!isSubmitting && <ArrowRight className="h-4 w-4" />}
+        </button>
+      </form>
+      <p className="mt-8 text-center text-sm text-slate-500">
+        Don&apos;t have an account?{" "}
+        <Link
+          to="/register"
+          className="font-bold text-indigo-600 hover:text-indigo-500"
+        >
+          Register
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

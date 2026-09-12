@@ -44,3 +44,14 @@ html, body, #root {
   --accent-subtle: rgba(168, 85, 247, 0.12); /* Translucent Orchid */
   --accent-glow: rgba(236, 72, 153, 0.25); /* Rose Pink Glow */
 }
+
+/* Override Chrome Autofill Styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: inset 0 0 0px 1000px #1e1b2e !important; /* Change #1e1b2e to match your exact card input background color */
+}

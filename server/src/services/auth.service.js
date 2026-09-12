@@ -36,7 +36,7 @@ const refreshAccessToken = async (refreshToken) => {
 
   const newAccessToken = generateAccessToken(user.id);
 
-  return newAccessToken;
+  return { user, accessToken: newAccessToken };
 };
 
 const registerUser = async ({ name, email, password }) => {
@@ -54,30 +54,58 @@ const registerUser = async ({ name, email, password }) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role: userCount === 0 ? "ADMIN" : "USER",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isVerified: true,
-      createdAt: true,
-    },
-  });
-
   const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  await prisma.otp.create({
-    data: { userId: user.id, otp: otpCode, expiresAt },
+  const user = await prisma.$transaction(async (transaction) => {
+    const createdUser = await transaction.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: userCount === 0 ? "ADMIN" : "USER",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+
+    await transaction.otp.create({
+      data: { userId: createdUser.id, otp: otpCode, expiresAt },
+    });
+
+    return createdUser;
   });
-  await sendOtp(user.email, otpCode);
+
+  try {
+    await sendOtp(user.email, otpCode);
+  } catch (err) {
+    console.error("OTP email delivery failed:", {
+      statusCode: err.statusCode,
+      message: err.message,
+      body: err.body,
+    });
+
+    try {
+      await prisma.user.delete({ where: { id: user.id } });
+    } catch (cleanupError) {
+      console.error(
+        `Failed to clean up registration for ${user.email}:`,
+        cleanupError,
+      );
+    }
+
+    const emailError = new Error(
+      "Could not send verification email. Please try again.",
+    );
+    emailError.statusCode = 503;
+    throw emailError;
+  }
 
   return user;
 };

@@ -13,6 +13,7 @@ import Chat from "./pages/Chat";
 import Friend from "./pages/Friend";
 import History from "./pages/History";
 import Trending from "./pages/Trending";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -47,6 +48,9 @@ export default function App() {
         <Route path="friend" element={<Friend />} />
         <Route path="history" element={<History />} />
         <Route path="trend" element={<Trending />} />
+
+        {/* Profile */}
+        <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>
   );

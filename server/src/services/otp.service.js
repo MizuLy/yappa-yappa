@@ -52,12 +52,20 @@ const verifyOtp = async ({ email, otp }) => {
 
   await prisma.otp.deleteMany({ where: { userId: user.id } });
 
-  await prisma.user.update({
+  const verifiedUser = await prisma.user.update({
     where: { id: user.id },
     data: { isVerified: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isVerified: true,
+      createdAt: true,
+    },
   });
 
-  return { message: "OTP verified" };
+  return { message: "OTP verified", user: verifiedUser };
 };
 
 module.exports = { requestOtp, verifyOtp };

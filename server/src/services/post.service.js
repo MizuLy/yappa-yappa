@@ -23,7 +23,11 @@ const createPost = async ({ userId, content, imageUrls }) => {
 
 const getPosts = async () => {
   const posts = await prisma.post.findMany({
-    include: { images: true },
+    include: {
+      images: true,
+      user: { select: { id: true, name: true, imageUrl: true } },
+      _count: { select: { likes: true, comments: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 

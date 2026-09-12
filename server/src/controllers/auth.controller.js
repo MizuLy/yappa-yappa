@@ -7,10 +7,10 @@ const {
 const refresh = async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
-    const newAccessToken = await refreshAccessToken(token);
+    const { user, accessToken } = await refreshAccessToken(token);
     res
       .status(200)
-      .json({ status: "success", data: { accessToken: newAccessToken } });
+      .json({ status: "success", data: { accessToken, user } });
   } catch (err) {
     next(err);
   }

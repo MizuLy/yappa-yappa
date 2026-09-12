@@ -19,21 +19,22 @@ const likePost = async ({ userId, postId }) => {
   });
 
   if (existingLike) {
-    const error = new Error("Already liked the yap");
-    error.statusCode = 409;
-    throw error;
+    return existingLike;
   }
 
   const like = await prisma.like.create({
     data: { userId, postId },
   });
 
-  await createNotification({
-    userId: post.userId,
-    actorId: userId,
-    type: NotificationType.LIKE,
-    postId,
-  });
+  // Only create notification if liking someone else's post
+  if (post.userId !== userId) {
+    await createNotification({
+      userId: post.userId,
+      actorId: userId,
+      type: NotificationType.LIKE,
+      postId,
+    });
+  }
 
   return like;
 };
@@ -86,21 +87,21 @@ const likeComment = async ({ userId, commentId }) => {
   });
 
   if (existingLike) {
-    const error = new Error("You already liked the yap");
-    error.statusCode = 409;
-    throw error;
+    return existingLike;
   }
 
   const like = await prisma.like.create({
     data: { userId, commentId },
   });
 
-  await createNotification({
-    userId: comment.userId,
-    actorId: userId,
-    type: "LIKE",
-    postId: comment.postId,
-  });
+  if (comment.userId !== userId) {
+    await createNotification({
+      userId: comment.userId,
+      actorId: userId,
+      type: NotificationType.LIKE,
+      postId: comment.postId,
+    });
+  }
 
   return like;
 };
@@ -123,9 +124,7 @@ const unlikeComment = async ({ userId, commentId }) => {
   });
 
   if (!existingLike) {
-    const error = new Error("You haven't like this yap");
-    error.statusCode = 404;
-    throw error;
+    return { message: "Unliked" };
   }
 
   await prisma.like.delete({

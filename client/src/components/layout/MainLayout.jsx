@@ -1,7 +1,7 @@
-import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ThemeToggle from "../ThemeToggle";
+import Logout from "../../pages/auth/Logout";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -33,18 +33,16 @@ export default function MainLayout() {
 
       {/* Main Content Area with Contextual Sticky Header */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto">
-        {/* Subtle Sticky Header (Not a heavy Navbar) */}
+        {/* Subtle Sticky Header */}
         <header className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 backdrop-blur-xl bg-white/40 dark:bg-black/20 border-b border-black/5 dark:border-white/5">
           <h2 className="text-base font-semibold tracking-tight text-neutral-800 dark:text-neutral-200">
             {getPageTitle(location.pathname)}
           </h2>
 
           <div className="flex items-center gap-3">
-            {/* Quick Actions (e.g., Theme Toggle, Notifications, User Avatar) */}
+            {/* Quick Actions */}
             <ThemeToggle />
-            <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs">
-              M
-            </div>
+            <Logout />
           </div>
         </header>
 
