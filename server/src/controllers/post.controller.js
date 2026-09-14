@@ -25,8 +25,13 @@ const createPostHandler = async (req, res, next) => {
 
 const getPostsHandler = async (req, res, next) => {
   try {
-    const posts = await getPosts();
-    res.status(200).json({ status: "success", data: posts });
+    const { page, limit } = req.query;
+    const result = await getPosts({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+
+    res.status(200).json({ status: "success", data: result });
   } catch (err) {
     next(err);
   }

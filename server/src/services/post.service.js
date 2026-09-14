@@ -21,17 +21,32 @@ const createPost = async ({ userId, content, imageUrls }) => {
   return post;
 };
 
-const getPosts = async () => {
-  const posts = await prisma.post.findMany({
-    include: {
-      images: true,
-      user: { select: { id: true, name: true, imageUrl: true } },
-      _count: { select: { likes: true, comments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+const getPosts = async ({ page = 1, limit = 20 } = {}) => {
+  const skip = (page - 1) * limit;
 
-  return posts;
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      include: {
+        images: true,
+        user: { select: { id: true, name: true, imageUrl: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.post.count(),
+  ]);
+
+  return {
+    posts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit), // total posts/limit posts = total pages
+    },
+  };
 };
 
 const getPostById = async ({ id }) => {
