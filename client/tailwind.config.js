@@ -26,6 +26,7 @@ export default {
         notokhmer: ["'Noto Sans Khmer'", "sans-serif"],
         comfortaa: ["Comfortaa", "sans-serif"],
         bungee: ["'Bungee Spice'", "cursive"],
+        lacquer: ["'Lacquer'", "cursive"],
         jersey: ["'Jersey 10'", "cursive"],
       },
     },

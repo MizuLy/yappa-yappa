@@ -56,7 +56,7 @@ export default function Sidebar() {
 
       {/* Brand Header */}
       <div className="px-3 mb-8 relative z-10">
-        <h1 className="text-2xl font-bungee tracking-wide text-indigo-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:via-neutral-200 dark:to-indigo-300">
+        <h1 className="text-2xl font-lacquer tracking-wide text-indigo-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:via-neutral-200 dark:to-indigo-300">
           Yappa Yappa
         </h1>
       </div>
