@@ -5,8 +5,8 @@ export const postFeed = async (data) => {
   return res.data;
 };
 
-export const getFeeds = async () => {
-  const res = await api.get("/posts");
+export const getFeeds = async (page = 1, limit = 20) => {
+  const res = await api.get("/posts", { params: { page, limit } });
   return res.data;
 };
 

@@ -85,7 +85,9 @@ export default function Register() {
     });
     setOtp(nextOtp);
     document
-      .getElementById(`otp-${Math.min(index + pastedDigits.length, otp.length - 1)}`)
+      .getElementById(
+        `otp-${Math.min(index + pastedDigits.length, otp.length - 1)}`,
+      )
       ?.focus();
   };
 
@@ -124,7 +126,7 @@ export default function Register() {
       description={
         step === "otp"
           ? "One last step and you’re ready to start yapping."
-          : "Join a more open, friendly community built around real conversations."
+          : "Join a more open, friendly but yap community built around real yaps."
       }
     >
       {step === "register" ? (

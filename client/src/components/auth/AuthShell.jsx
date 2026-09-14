@@ -28,7 +28,7 @@ export default function AuthShell({ children, title, description }) {
             </p>
             <div className="mt-8 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 text-xs text-indigo-50/90 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.9)]" />
-              A kinder internet starts with people like you.
+              A chaotic internet starts with people like you.
             </div>
           </div>
         </section>

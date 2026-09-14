@@ -10,7 +10,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [canVerifyAccount, setCanVerifyAccount] = useState(false);
-  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+  const [isRequestingVerification, setIsRequestingVerification] =
+    useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,7 +24,9 @@ export default function Login() {
       await requestOtp(formData.email);
       navigate("/register", { state: { verifyEmail: formData.email } });
     } catch (err) {
-      setError(err.response?.data?.message || "Could not send a verification code.");
+      setError(
+        err.response?.data?.message || "Could not send a verification code.",
+      );
     } finally {
       setIsRequestingVerification(false);
     }
@@ -40,7 +43,9 @@ export default function Login() {
     } catch (err) {
       const message =
         err.response?.data?.message || "Unable to sign in. Please try again.";
-      setCanVerifyAccount(message.toLowerCase().includes("verify your account"));
+      setCanVerifyAccount(
+        message.toLowerCase().includes("verify your account"),
+      );
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -50,7 +55,7 @@ export default function Login() {
   return (
     <AuthShell
       title="Welcome back"
-      description="Real conversations, brighter tomorrows. Pick up where you left off on Yappa Yappa."
+      description="Real yap, brighter tomorrows. Pick up where you left off on Yappa Yappa."
     >
       <div className="mb-8">
         <p className="mb-3 text-sm font-semibold text-indigo-600">
@@ -78,7 +83,9 @@ export default function Login() {
               disabled={isRequestingVerification}
               className="ml-1 font-bold underline underline-offset-2 hover:text-red-800"
             >
-              {isRequestingVerification ? "Sending code..." : "Verify your account"}
+              {isRequestingVerification
+                ? "Sending code..."
+                : "Verify your account"}
             </button>
           )}
         </div>

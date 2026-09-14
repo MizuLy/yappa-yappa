@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Image as ImageIcon,
   Send,
@@ -17,6 +17,7 @@ import {
 import { deleteFeed, editFeed, getFeeds, postFeed } from "../../api/post";
 import { getLikesByPost, likePost, unlikePost } from "../../api/like";
 import { useAuth } from "../../hooks/useAuth";
+import FeedSkeleton from "../../components/FeedSkeleton";
 
 const formatRelativeTime = (dateValue) => {
   if (!dateValue) return "Recently";
@@ -46,6 +47,8 @@ export default function Feed() {
   const [openMenuPostId, setOpenMenuPostId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   // Lightbox Modal State
   const [activeModal, setActiveModal] = useState({
@@ -55,12 +58,7 @@ export default function Feed() {
   });
 
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    fetchPosts();
-    // fetchPosts intentionally runs when the signed-in user changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  const loadingMoreRef = useRef(false);
 
   // Keyboard navigation for full-screen image lightbox
   useEffect(() => {
@@ -74,50 +72,62 @@ export default function Feed() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeModal]);
 
-  async function fetchPosts() {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getFeeds();
-      const fetchedPosts = response.data?.data || response.data || [];
-      const postsWithLikeState = await Promise.all(
-        (Array.isArray(fetchedPosts) ? fetchedPosts : []).map(async (post) => {
-          const postId = post._id || post.id;
-          if (!postId || !user?.id) return post;
+  const fetchPosts = useCallback(
+    async (pageNum = 1) => {
+      if (pageNum > 1 && loadingMoreRef.current) return;
+      if (pageNum > 1) loadingMoreRef.current = true;
 
-          try {
-            const likesResponse = await getLikesByPost(postId);
-            const likesData =
-              likesResponse?.data?.data || likesResponse?.data || likesResponse;
-            const likes = Array.isArray(likesData?.likes) ? likesData.likes : [];
-            const likeCount = likesData?.count;
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getFeeds(pageNum, 20);
+        const { posts: newPosts, pagination } = response.data;
 
-            return {
-              ...post,
-              isLiked: likes.some(
-                (like) => like.userId === user.id || like.user?.id === user.id,
-              ),
-              ...(typeof likeCount === "number"
-                ? {
-                    likes: likeCount,
-                    _count: { ...post._count, likes: likeCount },
-                  }
-                : {}),
-            };
-          } catch (err) {
-            console.error(`Failed to load likes for post ${postId}:`, err);
-            return post;
-          }
-        }),
-      );
-      setPosts(postsWithLikeState);
-    } catch (err) {
-      console.error("Failed to fetch posts:", err);
-      setError("Unable to load posts. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setHasMore(pagination.page < pagination.totalPages);
+        setPage(pagination.page);
+
+        const postsWithLikeState = await Promise.all(
+          newPosts.map(async (post) => {
+            const postId = post.id;
+            if (!postId || !user?.id) return post;
+
+            try {
+              const likesResponse = await getLikesByPost(postId);
+              const { count: likeCount, likes } = likesResponse?.data || {};
+
+              return {
+                ...post,
+                isLiked: (likes || []).some(
+                  (like) => like.user?.id === user.id,
+                ),
+                _count: { ...post._count, likes: likeCount },
+              };
+            } catch (err) {
+              console.error(`Failed to load likes for post ${postId}:`, err);
+              return post;
+            }
+          }),
+        );
+        setPosts((prev) => {
+          if (pageNum === 1) return postsWithLikeState;
+          return [...prev, ...postsWithLikeState];
+        });
+      } catch (err) {
+        console.error("Failed to fetch posts:", err);
+        setError("Unable to load posts. Please try again.");
+      } finally {
+        setLoading(false);
+        if (pageNum > 1) loadingMoreRef.current = false;
+      }
+    },
+    [user?.id],
+  );
+
+  useEffect(() => {
+    // Initial feed loading is intentionally triggered when the signed-in user changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handleImageFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -225,7 +235,11 @@ export default function Feed() {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           (post._id || post.id) === postId
-            ? { ...post, ...updatedPost, content: updatedPost.content || editText.trim() }
+            ? {
+                ...post,
+                ...updatedPost,
+                content: updatedPost.content || editText.trim(),
+              }
             : post,
         ),
       );
@@ -271,7 +285,7 @@ export default function Feed() {
         return nextIds;
       });
     }
-  }
+  };
 
   // Lightbox Modal Controls
   const openModal = (images, index) => {
@@ -311,6 +325,26 @@ export default function Feed() {
     if (count === 5) return "grid-cols-3";
     return "grid-cols-2";
   };
+
+  useEffect(() => {
+    const scrollContainer = document.getElementById("main-scroll-container");
+    if (!scrollContainer) return undefined;
+
+    const handleScroll = () => {
+      if (
+        scrollContainer.scrollTop + scrollContainer.clientHeight >=
+          scrollContainer.scrollHeight - 300 &&
+        hasMore &&
+        !loading &&
+        !loadingMoreRef.current
+      ) {
+        fetchPosts(page + 1);
+      }
+    };
+    scrollContainer.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
+  }, [page, hasMore, loading, fetchPosts]);
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
@@ -405,9 +439,9 @@ export default function Feed() {
         </form>
       </div>
 
-      {loading && (
+      {loading && posts.length === 0 && (
         <div className="flex justify-center py-10">
-          <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+          <FeedSkeleton />
         </div>
       )}
 
@@ -418,188 +452,196 @@ export default function Feed() {
       )}
 
       {/* Feed List */}
-      {!loading && (
-        <div className="space-y-3">
-          {posts.map((post) => {
-            const postId = post._id || post.id;
-            const authorId = post.userId || post.user?.id || post.authorId;
-            const isOwnPost = Boolean(user?.id && authorId === user.id);
-            const authorName =
-              post.user?.name || post.authorName || post.author || "Yapper";
-            const username =
-              post.user?.username || post.username || `@${authorName.toLowerCase().replace(/\s+/g, "")}`;
+      <div className="space-y-3">
+        {posts.map((post) => {
+          const postId = post._id || post.id;
+          const authorId = post.userId || post.user?.id || post.authorId;
+          const isOwnPost = Boolean(user?.id && authorId === user.id);
+          const authorName =
+            post.user?.name || post.authorName || post.author || "Yapper";
+          const username =
+            post.user?.username ||
+            post.username ||
+            `@${authorName.toLowerCase().replace(/\s+/g, "")}`;
 
-            const postImages = post.images?.length
-              ? post.images.map((img) =>
-                  typeof img === "string" ? img : img.url || img.path,
-                )
-              : post.image || post.imageUrl
-                ? [post.image || post.imageUrl]
-                : [];
+          const postImages = post.images?.length
+            ? post.images.map((img) =>
+                typeof img === "string" ? img : img.url || img.path,
+              )
+            : post.image || post.imageUrl
+              ? [post.image || post.imageUrl]
+              : [];
 
-            return (
-              <article
-                key={postId}
-                className="p-5 rounded-2xl bg-white/60 dark:bg-neutral-900/60 border border-black/10 dark:border-neutral-800/80 hover:border-black/20 dark:hover:border-neutral-700/80 transition-all duration-200 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md">
-                      {authorName[0]?.toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
-                        {authorName}
-                      </h4>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {username}
-                      </span>
-                    </div>
+          return (
+            <article
+              key={postId}
+              className="p-5 rounded-2xl bg-white/60 dark:bg-neutral-900/60 border border-black/10 dark:border-neutral-800/80 hover:border-black/20 dark:hover:border-neutral-700/80 transition-all duration-200 shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md">
+                    {authorName[0]?.toUpperCase()}
                   </div>
-
-                  <div className="relative flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                      {formatRelativeTime(post.createdAt)}
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
+                      {authorName}
+                    </h4>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {username}
                     </span>
-                    <button
-                      onClick={() =>
-                        setOpenMenuPostId((currentId) =>
-                          currentId === postId ? null : postId,
-                        )
-                      }
-                      className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                      title="Post options"
-                      aria-label="Post options"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    {openMenuPostId === postId && (
-                      <div className="absolute right-0 top-8 z-10 min-w-36 overflow-hidden rounded-xl border border-black/10 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl">
-                        {isOwnPost ? (
-                          <>
-                            <button
-                              onClick={() => startEditing(post)}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-700 dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setOpenMenuPostId(null);
-                                handleDelete(postId);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-500 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete
-                            </button>
-                          </>
-                        ) : (
+                  </div>
+                </div>
+
+                <div className="relative flex items-center gap-2">
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                    {formatRelativeTime(post.createdAt)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setOpenMenuPostId((currentId) =>
+                        currentId === postId ? null : postId,
+                      )
+                    }
+                    className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    title="Post options"
+                    aria-label="Post options"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  {openMenuPostId === postId && (
+                    <div className="absolute right-0 top-8 z-10 min-w-36 overflow-hidden rounded-xl border border-black/10 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl">
+                      {isOwnPost ? (
+                        <>
                           <button
-                            onClick={() => setOpenMenuPostId(null)}
+                            onClick={() => startEditing(post)}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-700 dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10"
                           >
-                            <Bookmark className="w-3.5 h-3.5" />
-                            Save post
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {editingPostId === postId ? (
-                  <div className="mb-3 space-y-2">
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      rows={3}
-                      autoFocus
-                      className="w-full resize-none rounded-xl border border-indigo-500/40 bg-transparent p-3 text-sm leading-relaxed text-neutral-800 outline-none dark:text-neutral-200"
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={cancelEditing}
-                        className="rounded-lg px-3 py-1.5 text-xs text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleEdit(postId)}
-                        disabled={!editText.trim()}
-                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                      >
-                        Save changes
-                      </button>
+                          <button
+                            onClick={() => {
+                              setOpenMenuPostId(null);
+                              handleDelete(postId);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-500 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setOpenMenuPostId(null)}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-700 dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10"
+                        >
+                          <Bookmark className="w-3.5 h-3.5" />
+                          Save post
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ) : post.content ? (
-                  <p className="text-sm leading-relaxed text-neutral-800 dark:text-neutral-200 mb-3 whitespace-pre-line">
-                    {post.content}
-                  </p>
-                ) : null}
-
-                {/* Clickable Image Grid */}
-                {postImages.length > 0 && (
-                  <div
-                    className={`grid gap-1.5 mb-3 rounded-2xl overflow-hidden border border-black/10 dark:border-neutral-800 ${getGridClass(
-                      postImages.length,
-                    )}`}
-                  >
-                    {postImages.map((src, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => openModal(postImages, idx)}
-                        className={`cursor-pointer overflow-hidden group bg-neutral-100 dark:bg-neutral-950 transition-colors ${
-                          postImages.length === 1
-                            ? "max-h-[420px]"
-                            : postImages.length === 5 && idx < 2
-                              ? "h-40 col-span-1"
-                              : "h-36"
-                        }`}
-                      >
-                        <img
-                          src={src}
-                          alt="Attachment"
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-8 pt-3 border-t border-black/5 dark:border-neutral-800/60 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                  {/* Heart Button */}
-                  <button
-                    onClick={() => handleLikeToggle(postId, Boolean(post.isLiked))}
-                    disabled={likingPostIds.has(postId)}
-                    className={`flex items-center gap-2 transition-colors active:scale-95 ${
-                      post.isLiked
-                        ? "text-rose-500"
-                        : "hover:text-rose-500 dark:hover:text-rose-400"
-                    } disabled:opacity-50`}
-                  >
-                    <Heart
-                      className={`w-4 h-4 transition-all ${
-                        post.isLiked ? "fill-current text-rose-500" : ""
-                      }`}
-                    />
-                    <span>{post._count?.likes ?? post.likes ?? 0}</span>
-                  </button>
-
-                  <button className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{post._count?.comments || post.comments || 0}</span>
-                  </button>
-
-                  <button className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ml-auto">
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                  )}
                 </div>
-              </article>
-            );
-          })}
+              </div>
+
+              {editingPostId === postId ? (
+                <div className="mb-3 space-y-2">
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={3}
+                    autoFocus
+                    className="w-full resize-none rounded-xl border border-indigo-500/40 bg-transparent p-3 text-sm leading-relaxed text-neutral-800 outline-none dark:text-neutral-200"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={cancelEditing}
+                      className="rounded-lg px-3 py-1.5 text-xs text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleEdit(postId)}
+                      disabled={!editText.trim()}
+                      className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </div>
+              ) : post.content ? (
+                <p className="text-sm leading-relaxed text-neutral-800 dark:text-neutral-200 mb-3 whitespace-pre-line">
+                  {post.content}
+                </p>
+              ) : null}
+
+              {/* Clickable Image Grid */}
+              {postImages.length > 0 && (
+                <div
+                  className={`grid gap-1.5 mb-3 rounded-2xl overflow-hidden border border-black/10 dark:border-neutral-800 ${getGridClass(
+                    postImages.length,
+                  )}`}
+                >
+                  {postImages.map((src, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => openModal(postImages, idx)}
+                      className={`cursor-pointer overflow-hidden group bg-neutral-100 dark:bg-neutral-950 transition-colors ${
+                        postImages.length === 1
+                          ? "max-h-[420px]"
+                          : postImages.length === 5 && idx < 2
+                            ? "h-40 col-span-1"
+                            : "h-36"
+                      }`}
+                    >
+                      <img
+                        src={src}
+                        alt="Attachment"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-8 pt-3 border-t border-black/5 dark:border-neutral-800/60 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                {/* Heart Button */}
+                <button
+                  onClick={() =>
+                    handleLikeToggle(postId, Boolean(post.isLiked))
+                  }
+                  disabled={likingPostIds.has(postId)}
+                  className={`flex items-center gap-2 transition-colors active:scale-95 ${
+                    post.isLiked
+                      ? "text-rose-500"
+                      : "hover:text-rose-500 dark:hover:text-rose-400"
+                  } disabled:opacity-50`}
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-all ${
+                      post.isLiked ? "fill-current text-rose-500" : ""
+                    }`}
+                  />
+                  <span>{post._count?.likes ?? post.likes ?? 0}</span>
+                </button>
+
+                <button className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>{post._count?.comments || post.comments || 0}</span>
+                </button>
+
+                <button className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ml-auto">
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {loading && posts.length > 0 && (
+        <div className="flex justify-center py-6">
+          <FeedSkeleton />
         </div>
       )}
 
