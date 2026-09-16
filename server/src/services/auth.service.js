@@ -57,17 +57,22 @@ const registerUser = async ({ name, email, password }) => {
   const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const username = `${name.toLowerCase().replace(/\s+/g, "")}${randomSuffix}`;
+
   const user = await prisma.$transaction(async (transaction) => {
     const createdUser = await transaction.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        username,
         role: userCount === 0 ? "ADMIN" : "USER",
       },
       select: {
         id: true,
         name: true,
+        username: true,
         email: true,
         role: true,
         isVerified: true,
